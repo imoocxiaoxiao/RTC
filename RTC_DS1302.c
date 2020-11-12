@@ -108,7 +108,7 @@ void RTC_Init0(signed char IsInited)
  //配置芯片
   if(!IsInited){
     //初始化时间
-    RTC_SetInfo(0, 18);
+    RTC_SetInfo(0, 20);
     RTC_SetInfo(1, 12);
     RTC_SetInfo(2, 31);    
     RTC_SetInfo(3, 23);
