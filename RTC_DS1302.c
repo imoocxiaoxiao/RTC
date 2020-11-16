@@ -127,30 +127,40 @@ void RTC_Task(void)
 }
 
 //------------------------------写备份数据------------------------------
-//用于保存掉电不丢失的数据，为保证与32位硬件兼容，为32Bit模式
+//用于保存掉电不丢失的数据,地址+长度不应超过RTC容量,有对齐要求时需对齐
 void RTC_WrBakData(unsigned char Adr,         //保存位置
                    const unsigned char *pData,//要保存的数据
                    unsigned char Len)          //数据长度
 {
-  if(Adr != 0) return; //暂只支持从0地址开始写
   //去除写保护
   unsigned char Bcd = 0;
   DS1302_Wr(DS1302_EN | DS1302_WR | DS1302_RTC | DS1302_RA_CTR, &Bcd, 1);
   //写数据
-  DS1302_Wr(DS1302_EN | DS1302_WR | DS1302_RAM | DS1302_RA_BURST, pData, Len);
+  if(Adr == 0)//突发方式写一组
+    DS1302_Wr(DS1302_EN | DS1302_WR | DS1302_RAM | DS1302_RA_BURST, pData, Len);
+  else{//只能一个个写了
+    Adr = DS1302_EN | DS1302_WR | DS1302_RAM | (Adr << 1);
+    for(; Len > 0; Len--, Adr += 2, pData++)//读写标志在最低位
+      DS1302_Wr(Adr, pData, 1);    
+  }
   //加上写保护
   Bcd = DS1302_CTR_WP;
   DS1302_Wr(DS1302_EN | DS1302_WR | DS1302_RTC | DS1302_RA_CTR, &Bcd, 1);
 }
 
 //------------------------------读备份数据---------------------------------
-//用于保存掉电不丢失的数据，为保证与32位硬件兼容，为32Bit模式
+//用于保存掉电不丢失的数据,地址+长度不应超过RTC容量,有对齐要求时需对齐
 void RTC_RdBakData(unsigned char Adr,     //保存位置
                    unsigned char *pData,//要保存的数据
                    unsigned char Len)   //数据长度
 {
-  if(Adr != 0) return; //暂只支持从0地址开始读
-  DS1302_Rd(DS1302_EN | DS1302_RD | DS1302_RAM | DS1302_RA_BURST, pData, Len);
+  if(Adr == 0)//突发方式可读一组
+    DS1302_Rd(DS1302_EN | DS1302_RD | DS1302_RAM | DS1302_RA_BURST, pData, Len);
+  else{//只能一个个读了
+    Adr = DS1302_EN | DS1302_RD | DS1302_RAM | (Adr << 1);
+    for(; Len > 0; Len--, Adr += 2, pData++)//读写标志在最低位
+      DS1302_Rd(Adr, pData, 1);    
+  }
 }
 
 
